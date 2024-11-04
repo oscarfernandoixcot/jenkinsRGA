@@ -24,3 +24,28 @@ resource "google_storage_bucket_object" "index" {
 
 }
 
+resource "google_compute_global_address" "lb_ip" {
+  name = "jenkins-lb-ip"
+}
+
+resource "google_compute_backend_bucket" "jenkins_backend" {
+  name        = "jenkins-backend-bucket"
+  bucket_name = google_storage_bucket.my_jenkins_bucket.name
+}
+
+resource "google_compute_url_map" "jenkins_url_map" {
+  name            = "jenkins-url-map"
+  default_service = google_compute_backend_bucket.jenkins_backend.self_link
+}
+
+resource "google_compute_target_http_proxy" "jenkins_http_proxy" {
+  name    = "jenkins-http-proxy"
+  url_map = google_compute_url_map.jenkins_url_map.self_link
+}
+
+resource "google_compute_global_forwarding_rule" "jenkins_http_forwarding_rule" {
+  name       = "jenkins-http-forwarding-rule"
+  ip_address = google_compute_global_address.lb_ip.address
+  port_range = "80"
+  target     = google_compute_target_http_proxy.jenkins_http_proxy.self_link
+}
