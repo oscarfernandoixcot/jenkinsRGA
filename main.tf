@@ -3,7 +3,7 @@ provider "google" {
   region  = "us-central1"
 }
 
-esource "google_storage_bucket" "my_jenkins_bucket" {
+resource "google_storage_bucket" "my_jenkins_bucket" {
   name                     = "demo-jenkinsbucket-001"
   project                  = "radiant-land-440421-h0"
   location                 = "US"
