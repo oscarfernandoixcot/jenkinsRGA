@@ -6,10 +6,21 @@ resource "google_storage_bucket" "my_jenkins_bucket" {
   public_access_prevention = "enforced"
 }
 
+resource "null_resource" "download_index" {
+  provisioner "local-exec" {
+    command = "curl -o ./index.html https://raw.githubusercontent.com/oscarfernandoixcot/jenkinsRGA/main/index.html"
+  }
+
+  triggers = {
+    file_version = sha256("https://raw.githubusercontent.com/oscarfernandoixcot/jenkinsRGA/main/index.html")
+  }
+}
+
 resource "google_storage_bucket_object" "index" {
   name          = "index.html"
   bucket        = google_storage_bucket.my_jenkins_bucket.name
-  source        = "path/to/your/local/index.html" # Change to the actual path of your index.html file
+  source        = "./index.html"
   content_type  = "text/html"
+
 }
 
