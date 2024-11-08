@@ -1,2 +1,57 @@
-terraform destroy
+pipeline {
+    agent any
+    
+    environment {
+        GOOGLE_APPLICATION_CREDENTIALS = credentials('gcp-key')
+        GIT_TOKEN = credentials('git-token')
+    }
+    
+    parameters {
+        choice(name: 'ACTION', choices: ['apply', 'destroy'], description: 'Choose whether to apply or destroy Terraform configuration')
+    }
+    
+    stages {
+        stage('Git Checkout') {
+            steps {
+                git branch: 'main',
+                    url: "https://${GIT_TOKEN}@github.com/oscarfernandoixcot/jenkinsRGA.git"
+            }
+        }
+        
+        stage('Terraform Init') {
+            steps {
+                script {
+                    sh 'terraform init'
+                }
+            }
+        }
+        
+        stage('Terraform Plan') {
+            steps {
+                script {
+                    // Plan for apply or destroy depending on ACTION parameter
+                    if (params.ACTION == 'apply') {
+                        sh 'terraform plan -out=tfplan'
+                    } else if (params.ACTION == 'destroy') {
+                        sh 'terraform plan -destroy -out=tfplan'
+                    }
+                }
+            }
+        }
 
+        stage('Manual Approval') {
+            steps {
+                input "Approve ${params.ACTION}?"
+            }
+        }
+        
+        stage('Terraform Apply/Destroy') {
+            steps {
+                script {
+                    // Apply or destroy based on the parameter
+                    sh 'terraform apply tfplan'
+                }
+            }
+        }
+    }
+}
